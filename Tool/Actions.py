@@ -81,22 +81,22 @@ def Attack_Up():
 #JUMP
 # 2
 def Short_Jump():
-    PressKey(C)
+    PressKey(Z)
     PressKey(DOWN_ARROW)
     PressKey(X)
     time.sleep(0.2) 
     ReleaseKey(X)
     ReleaseKey(DOWN_ARROW)
-    ReleaseKey(C)
+    ReleaseKey(Z)
     Nothing()
 # 3
 def Mid_Jump():
-    PressKey(C)
+    PressKey(Z)
     time.sleep(0.2)
     PressKey(X)
     time.sleep(0.2)
     ReleaseKey(X)
-    ReleaseKey(C)
+    ReleaseKey(Z)
     Nothing()
 
 
@@ -112,23 +112,23 @@ def Mid_Jump():
 # 4
 def Skill_Up():
     PressKey(UP_ARROW)
-    PressKey(Z)
+    PressKey(A)
     PressKey(X)
     time.sleep(0.15)
     ReleaseKey(UP_ARROW)
-    ReleaseKey(Z)
+    ReleaseKey(A)
     ReleaseKey(X)
     Nothing()
     time.sleep(0.15)
 # 5
 def Skill_Down():
     PressKey(DOWN_ARROW)
-    PressKey(Z)
+    PressKey(A)
     PressKey(X)
     time.sleep(0.2)
     ReleaseKey(X)
     ReleaseKey(DOWN_ARROW)
-    ReleaseKey(Z)
+    ReleaseKey(A)
     Nothing()
     time.sleep(0.3)
 
@@ -136,9 +136,9 @@ def Skill_Down():
 # Rush
 # 6
 def Rush():
-    PressKey(L_SHIFT)
+    PressKey(C)
     time.sleep(0.1)
-    ReleaseKey(L_SHIFT)
+    ReleaseKey(C)
     Nothing()
     PressKey(X)
     time.sleep(0.03)
@@ -179,13 +179,13 @@ def restart():
     time.sleep(1)
     while True:
         station = cv2.resize(cv2.cvtColor(grab_screen(station_size), cv2.COLOR_RGBA2RGB),(1000,500))
-        if station[187][612][0] > 200: 
+        if station[187][612][0] > 200:
             # PressKey(DOWN_ARROW)
             # time.sleep(0.1)
             # ReleaseKey(DOWN_ARROW)
-            PressKey(C)
+            PressKey(Z)
             time.sleep(0.1)
-            ReleaseKey(C)
+            ReleaseKey(Z)
             break
         else:
             Look_up()

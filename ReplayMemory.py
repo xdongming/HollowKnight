@@ -3,17 +3,18 @@ import collections
 import numpy as np
 import pickle
 import os
+import re
 
 class ReplayMemory:
     def __init__(self,max_size,file_name):
         self.size = max_size
         self.count = 0
         self.file_name = file_name
-        self.buffer = collections.deque(maxlen=max_size)
+        self.buffer = collections.deque(maxlen=max_size)    #双端队列
 
     def append(self,exp):
         self.count += 1
-        self.buffer.append(exp)
+        self.buffer.append(exp)         #队列中插入一个元素
         # save to file
         # if self.count % self.size == 0:
         #      self.save(self.file_name)
@@ -46,10 +47,17 @@ class ReplayMemory:
             np.array(next_obs_batch).astype('float32'), np.array(done_batch).astype('float32')
 
     def save(self,file_name):
-        count = 0
+        num_list = []
         for x in os.listdir(file_name):
-            count += 1
-        file_name = file_name + "/memory_" + str(count) +".txt"
+            x = re.split('[_.]', x)     #文件格式为"memory_x.txt"，分割成['memory','x','txt']
+            num_list.append(int(float(x[1])))
+        for i in range(num_list[-1]):
+            if i != num_list[i]:
+                break
+        if i == len(num_list)-1:
+            file_name = file_name + "/memory_" + str(i+1) + ".txt"
+        else:
+            file_name = file_name + "/memory_" + str(i) + ".txt"
         pickle.dump(self.buffer, open(file_name, 'wb'))
         print("Save memory:", file_name)
 

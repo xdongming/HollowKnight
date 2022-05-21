@@ -1,3 +1,5 @@
+import copy
+
 import tensorflow as tf
 from tensorflow.keras.models import load_model, Model as mod
 from tensorflow.keras import layers, models, regularizers
@@ -77,6 +79,7 @@ class Model:
             print("load action model")
             self.act_model = models.Sequential()
             self.private_act_model = load_model("./model/act_part.h5", custom_objects={'BasicBlock': BasicBlock})
+            self.target_act_model  = load_model("./model/act_part.h5", custom_objects={'BasicBlock': BasicBlock})
             # self.act_model.add(self.shared_model)
             self.act_model.add(self.private_act_model)
 
@@ -84,6 +87,7 @@ class Model:
             print("load move model")
             self.move_model = models.Sequential()
             self.private_move_model = load_model("./model/move_part.h5", custom_objects={'BasicBlock': BasicBlock})
+            self.target_move_model = load_model("./model/move_part.h5", custom_objects={'BasicBlock': BasicBlock})
             # self.move_model.add(self.shared_model)
             self.move_model.add(self.private_move_model)
 
@@ -133,7 +137,7 @@ class Model:
         x = self.build_resblock(96, 2, name='Resnet_2', stride=2)(x)
         x = self.build_resblock(128, 2, name='Resnet_3', stride=2)(x)
         x = self.build_resblock(256, 2, name='Resnet_4', stride=2)(x)
-        outputs = GlobalAveragePooling2D(name='pooling')(x)
+        x = GlobalAveragePooling2D(name='pooling')(x)
         v_func = Dense(1, name='v_func')(x)
         a_func = Dense(self.act_dim, name='a_func')(x)
         a_func = add([a_func, -tf.reduce_mean(a_func, keepdims=True)])
@@ -148,6 +152,24 @@ class Model:
         # self.act_model.add(self.shared_model)
         self.act_model.add(self.private_act_model)
 
+        #target_act_model
+        input = Input(shape=self.input_shape)
+        y = Conv3D(32, (2, 3, 3), strides=(1, 2, 2), input_shape=self.input_shape, name='conv1', activation='relu')(
+            input)
+        y = Conv3D(48, (2, 3, 3), strides=(1, 1, 1), input_shape=self.input_shape, name='conv2', activation='relu')(y)
+        y = Conv3D(64, (2, 3, 3), strides=(1, 1, 1), input_shape=self.input_shape, name='conv3', activation='relu')(y)
+        y = Lambda(lambda x: tf.reduce_sum(x, 1))(y)
+        y = self.build_resblock(64, 2, name='Resnet_1')(y)
+        y = self.build_resblock(96, 2, name='Resnet_2', stride=2)(y)
+        y = self.build_resblock(128, 2, name='Resnet_3', stride=2)(y)
+        y = self.build_resblock(256, 2, name='Resnet_4', stride=2)(y)
+        y = GlobalAveragePooling2D(name='pooling')(y)
+        v = Dense(1, name='v_func')(y)
+        a = Dense(self.act_dim, name='a_func')(y)
+        a = add([a, -tf.reduce_mean(a, keepdims=True)])
+        output = add([v, a])
+        self.target_act_model = mod(inputs=input, outputs=output)
+
         # output layer for move model
         _inputs = Input(shape=self.input_shape)
         _x = Conv3D(32, (2, 3, 3), strides=(1, 2, 2), input_shape=self.input_shape, name='conv1', activation='relu')(
@@ -159,7 +181,7 @@ class Model:
         _x = self.build_resblock(96, 2, name='Resnet_2', stride=2)(_x)
         _x = self.build_resblock(128, 2, name='Resnet_3', stride=2)(_x)
         _x = self.build_resblock(256, 2, name='Resnet_4', stride=2)(_x)
-        _outputs = GlobalAveragePooling2D(name='pooling')(_x)
+        _x = GlobalAveragePooling2D(name='pooling')(_x)
         _v_func = Dense(1, name='v_func')(_x)
         _a_func = Dense(self.act_dim, name='a_func')(_x)
         _a_func = add([_a_func, -tf.reduce_mean(_a_func, keepdims=True)])
@@ -170,6 +192,24 @@ class Model:
         self.move_model = models.Sequential()
         # self.move_model.add(self.shared_model)
         self.move_model.add(self.private_move_model)
+
+        # target_move_model
+        _input = Input(shape=self.input_shape)
+        _y = Conv3D(32, (2, 3, 3), strides=(1, 2, 2), input_shape=self.input_shape, name='conv1', activation='relu')(
+            _input)
+        _y = Conv3D(48, (2, 3, 3), strides=(1, 1, 1), input_shape=self.input_shape, name='conv2', activation='relu')(_y)
+        _y = Conv3D(64, (2, 3, 3), strides=(1, 1, 1), input_shape=self.input_shape, name='conv3', activation='relu')(_y)
+        _y = Lambda(lambda x: tf.reduce_sum(x, 1))(_y)
+        _y = self.build_resblock(64, 2, name='Resnet_1')(_y)
+        _y = self.build_resblock(96, 2, name='Resnet_2', stride=2)(_y)
+        _y = self.build_resblock(128, 2, name='Resnet_3', stride=2)(_y)
+        _y = self.build_resblock(256, 2, name='Resnet_4', stride=2)(_y)
+        _y = GlobalAveragePooling2D(name='pooling')(_y)
+        _v = Dense(1, name='v_func')(_y)
+        _a = Dense(self.act_dim, name='a_func')(_y)
+        _a = add([_a, -tf.reduce_mean(_a, keepdims=True)])
+        _output = add([_v, _a])
+        self.target_act_model = mod(inputs=_input, outputs=_output)
 
     #     # ------------------ build target_model ------------------
     #    # shared part

@@ -1,5 +1,3 @@
-import tensorflow as tf
-
 def get_se(name, loss):
     loss = float(loss)
     filename_act = './result/act_se.txt'
@@ -11,13 +9,15 @@ def get_se(name, loss):
         with open(filename_move, 'a') as file_object:
             file_object.write(str(loss)+' ')
 
-def get_q_value(value):
+def get_q_value(name, value):
     filename_act = './result/act_q.txt'
     filename_move = './result/move_q.txt'
-    with open(filename_act, 'a') as file_object:
-        file_object.write(str(value)+' ')
-    with open(filename_move, 'a') as file_object:
-        file_object.write(str(value)+' ')
+    if name == 'act':
+        with open(filename_act, 'a') as file_object:
+            file_object.write(str(value)+' ')
+    elif name == 'move':
+        with open(filename_move, 'a') as file_object:
+            file_object.write(str(value)+' ')
 
 def get_pass_count(number):
     filename = './result/pass_count.txt'

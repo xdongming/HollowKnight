@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from Tool.GetMetrics import get_se, get_q_value
 
 
 class DQN:
@@ -47,21 +46,22 @@ class DQN:
             enum_action = list(enumerate(action))
             pred_action_value = tf.gather_nd(predictions, indices=enum_action)
             loss = self.act_model.loss_func(labels + self.gamma * target_q, pred_action_value)
-            get_se('act', loss)
         gradients = tape.gradient(loss, self.act_model.trainable_variables)
         self.act_model.optimizer.apply_gradients(zip(gradients, self.act_model.trainable_variables))
         self.model.act_loss.append(loss)
-        return np.mean(target_q)
+        return np.mean(target_q), loss
         # self.act_model.train_loss.update_state(loss)
 
     def act_train_model(self, action, features, next_features, labels, epochs=1):
         """ 训练模型
         """
-        Q_sum = 0
+        q_sum = 0
+        loss_sum = 0
         for epoch in tf.range(1, epochs + 1):
-            Q_sum = Q_sum + self.act_train_step(action, features, next_features, labels)
-        get_q_value(Q_sum / epochs)
-
+            q, loss = self.act_train_step(action, features, next_features, labels)
+            q_sum = q_sum + q
+            loss_sum = loss_sum + loss
+        return q_sum/epochs, loss_sum/epochs
     def act_learn(self, obs, action, reward, next_obs, terminal):
         """ 使用DQN算法更新self.act_model的value网络
         """
@@ -72,8 +72,9 @@ class DQN:
 
         # 从target_model中获取 max Q' 的值，用于计算target_Q
 
-        self.act_train_model(action, obs, next_obs, reward, epochs=1)
+        q, loss = self.act_train_model(action, obs, next_obs, reward, epochs=1)
         self.act_global_step += 1
+        return q, loss
         # print('finish')
 
     def act_replace_target(self):  # ???
@@ -127,11 +128,10 @@ class DQN:
             enum_action = list(enumerate(action))
             pred_action_value = tf.gather_nd(predictions, indices=enum_action)
             loss = self.move_model.loss_func(labels + self.gamma * target_q, pred_action_value)
-            get_se('move', loss)
         gradients = tape.gradient(loss, self.move_model.trainable_variables)
         self.move_model.optimizer.apply_gradients(zip(gradients, self.move_model.trainable_variables))
         self.model.move_loss.append(loss)
-        return np.mean(target_q)
+        return np.mean(target_q), loss
         # self.move_plot_loss()
         # print("Move loss: ", loss)
         # self.move_model.train_loss.update_state(loss)
@@ -139,17 +139,20 @@ class DQN:
     def move_train_model(self, action, features, next_features, labels, epochs=1):
         """ 训练模型
         """
-        Q_sum = 0
+        q_sum = 0
+        loss_sum = 0
         for epoch in tf.range(1, epochs + 1):
-            Q_sum = Q_sum + self.move_train_step(action, features, next_features, labels)
-        get_q_value(Q_sum/epochs)
-
+            q, loss = self.move_train_step(action, features, next_features, labels)
+            q_sum = q_sum + q
+            loss_sum = loss_sum +loss
+        return q_sum/epochs, loss_sum/epochs
 
     def move_learn(self, obs, action, reward, next_obs, terminal):
         """ 使用DQN算法更新self.move_model的value网络
         """
-        self.move_train_model(action, obs, next_obs, reward, epochs=1)
+        q, loss = self.move_train_model(action, obs, next_obs, reward, epochs=1)
         self.move_global_step += 1
+        return q, loss
 
     def move_replace_target(self):
         '''预测模型权重更新到target模型权重'''

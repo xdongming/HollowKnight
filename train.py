@@ -14,7 +14,7 @@ from DQN import DQN
 from tensorflow.keras.models import Model as mod
 from Agent import Agent
 from ReplayMemory import ReplayMemory
-from Tool.GetMetrics import get_pass_count
+from Tool.GetMetrics import get_pass_count, get_se, get_q_value
 
 import Tool.Helper
 import Tool.Actions
@@ -54,18 +54,6 @@ DELAY_REWARD = 1
 
 def run_episode(hp, algorithm, agent, act_rmp_correct, move_rmp_correct, PASS_COUNT, paused, model):
     # learn while load game
-    for i in range(8):
-        if (len(move_rmp_correct) > MEMORY_WARMUP_SIZE):
-            # print("move learning")
-            batch_station, batch_actions, batch_reward, batch_next_station, batch_done = move_rmp_correct.sample(
-                BATCH_SIZE)
-            algorithm.move_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
-
-        if (len(act_rmp_correct) > MEMORY_WARMUP_SIZE):
-            # print("action learning")
-            batch_station, batch_actions, batch_reward, batch_next_station, batch_done = act_rmp_correct.sample(
-                BATCH_SIZE)
-            algorithm.act_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
     restart()
 
     step = 0
@@ -183,18 +171,31 @@ def run_episode(hp, algorithm, agent, act_rmp_correct, move_rmp_correct, PASS_CO
 
     get_pass_count(flag)
 
-    for i in range(8):
+    act_q_sum = 0
+    move_q_sum = 0
+    act_se_sum = 0
+    move_se_sum = 0
+    for i in range(16):
         if (len(move_rmp_correct) > MEMORY_WARMUP_SIZE):
             # print("move learning")
             batch_station, batch_actions, batch_reward, batch_next_station, batch_done = move_rmp_correct.sample(
                 BATCH_SIZE)
-            algorithm.move_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
+            move_q, move_loss = algorithm.move_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
 
         if (len(act_rmp_correct) > MEMORY_WARMUP_SIZE):
             # print("action learning")
             batch_station, batch_actions, batch_reward, batch_next_station, batch_done = act_rmp_correct.sample(
                 BATCH_SIZE)
-            algorithm.act_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
+            act_q, act_loss = algorithm.act_learn(batch_station, batch_actions, batch_reward, batch_next_station, batch_done)
+        act_q_sum = act_q_sum + act_q
+        move_q_sum = move_q_sum + move_q
+        act_se_sum = act_se_sum + act_loss
+        move_se_sum = move_se_sum + move_loss
+
+    get_q_value('act', act_q_sum/16)
+    get_q_value('move', move_q_sum / 16)
+    get_se('act', act_se_sum/16)
+    get_se('move', move_se_sum/16)
     # if (len(move_rmp_wrong) > MEMORY_WARMUP_SIZE):
     #     # print("move learning")
     #     batch_station,batch_actions,batch_reward,batch_next_station,batch_done = move_rmp_wrong.sample(1)

@@ -23,7 +23,7 @@ class ReplayMemory:
 
     def sample(self,batch_size):
         # random batch
-        mini_batch = random.sample(self.buffer, batch_size)
+        mini_batch = random.sample(self.buffer, batch_size)      #应该是一个五元组的列表，[(a,b,c,d,e),...]
 
 
         # continually batches
@@ -51,6 +51,7 @@ class ReplayMemory:
         for x in os.listdir(file_name):
             x = re.split('[_.]', x)     #文件格式为"memory_x.txt"，分割成['memory','x','txt']
             num_list.append(int(float(x[1])))
+        num_list.sort()
         for i in range(num_list[-1]):
             if i != num_list[i]:
                 break

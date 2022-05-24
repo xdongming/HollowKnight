@@ -240,14 +240,14 @@ if __name__ == '__main__':
 
     max_episode = 30000
     # 开始训练
-    episode = 0
+    episode = 179
     PASS_COUNT = 0  # pass count
     while episode < max_episode:  # 训练max_episode个回合，test部分不计算入episode数量
         # 训练
         episode += 1
         total_reward, total_step, PASS_COUNT, remind_hp = run_episode(hp, algorithm, agent, act_rmp_correct,
                                                                       move_rmp_correct, PASS_COUNT, paused, model)
-        if episode % 5 == 0:
+        if episode % 1 == 0:
             model.save_mode()
         if episode % 5 == 0:
             model.load_model()
